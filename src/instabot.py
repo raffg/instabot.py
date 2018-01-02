@@ -313,6 +313,7 @@ class InstaBot:
     def cleanup(self, *_):
         # Unfollow all bot follow
         if self.follow_counter >= self.unfollow_counter:
+            unfollow_list = []
             for f in self.bot_follow_list:
                 log_string = "Trying to unfollow: %s" % (f[0])
                 self.write_log(log_string)
@@ -323,6 +324,8 @@ class InstaBot:
                     sleeptime, self.unfollow_counter, self.follow_counter)
                 self.write_log(log_string)
                 time.sleep(sleeptime)
+                unfollow_list.append(f)
+            for f in unfollow_list:
                 self.bot_follow_list.remove(f)
 
         # Logout
@@ -648,7 +651,7 @@ class InstaBot:
                         log_string = "Trying to unfollow #%i: " % (
                             self.unfollow_counter + 1)
                         self.write_log(log_string)
-                        self.auto_unfollow()
+                        self.unfollow(f[0])
                         self.bot_follow_list.remove(f)
                         self.next_iteration["Unfollow"] = time.time() + \
                                                           self.add_time(self.unfollow_delay)
