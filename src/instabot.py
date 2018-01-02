@@ -10,6 +10,7 @@ import random
 import signal
 import sys
 import sqlite3
+import emoji
 
 if 'threading' in sys.modules:
     del sys.modules['threading']
