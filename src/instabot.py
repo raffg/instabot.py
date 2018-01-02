@@ -313,26 +313,24 @@ class InstaBot:
 
     def cleanup(self, *_):
         # Unfollow all bot follow
-        if self.follow_counter >= self.unfollow_counter:
-            unfollow_list = []
-            for f in self.bot_follow_list:
-                log_string = "Trying to unfollow: %s" % (f[0])
-                self.write_log(log_string)
-                self.unfollow_on_cleanup(f[0])
-                sleeptime = random.randint(self.unfollow_break_min,
-                                           self.unfollow_break_max)
-                log_string = "Pausing for %i seconds... %i of %i" % (
-                    sleeptime, self.unfollow_counter, self.follow_counter)
-                self.write_log(log_string)
-                time.sleep(sleeptime)
-                unfollow_list.append(f)
-            for f in unfollow_list:
+        while len(self.bot_follow_list) > 0:
+            f = self.bot_follow_list[0]
+            log_string = "Trying to unfollow: %s" % (f[0])
+            self.write_log(log_string)
+            if self.unfollow_on_cleanup(f[0]) != False:
                 self.bot_follow_list.remove(f)
+            sleeptime = random.randint(self.unfollow_break_min,
+                                       self.unfollow_break_max)
+            log_string = "Pausing for %i seconds... %i of %i" % (
+                sleeptime, self.unfollow_counter, self.follow_counter)
+            self.write_log(log_string)
+            time.sleep(sleeptime)
 
         # Logout
         if (self.login_status):
             self.logout()
         exit(0)
+
 
     def get_media_id_by_tag(self, tag):
         """ Get media ID set, by your hashtag """
@@ -558,14 +556,13 @@ class InstaBot:
                     if unfollow.status_code == 200:
                         self.unfollow_counter += 1
                         log_string = "Unfollow: %s #%i of %i." % (
-                            user_id, self.unfollow_counter,
-                            self.follow_counter)
+                            user_id, self.unfollow_counter, self.follow_counter)
                         self.write_log(log_string)
                     else:
                         log_string = "Still no good :( Skipping and pausing for another 5 minutes"
                         self.write_log(log_string)
                         time.sleep(300)
-                    return False
+                        return False
                 return unfollow
             except:
                 log_string = "Except on unfollow... Looks like a network error"
@@ -633,7 +630,7 @@ class InstaBot:
                 self.follows_db_c.execute("INSERT INTO usernames (username) VALUES(?)", (self.media_by_tag[0]["owner"]["id"],))
             except:
                 self.write_log("I tried to follow this guy once: %s" % (self.media_by_tag[0]["owner"]["id"]))
-                self.bot_follow_list.append([self.media_by_tag[0]["owner"]["id"], time.time()])
+                #self.bot_follow_list.append([self.media_by_tag[0]["owner"]["id"], time.time()])
                 self.next_iteration["Follow"] = time.time() + self.add_time(self.follow_delay)
                 return
 
@@ -652,10 +649,17 @@ class InstaBot:
                         log_string = "Trying to unfollow #%i: " % (
                             self.unfollow_counter + 1)
                         self.write_log(log_string)
-                        self.unfollow(f[0])
-                        self.bot_follow_list.remove(f)
+                        unfollow = self.unfollow(f[0])
+                        if unfollow.status_code == 200:
+                            self.bot_follow_list.remove(f)
+                        else:
+                            log_string = "Slow Down - Pausing unfollows for 5 minutes so we don't get banned!"
+                            self.write_log(log_string)
+                            for f in self.bot_follow_list:
+                                f[1] += 300
                         self.next_iteration["Unfollow"] = time.time() + \
-                                                          self.add_time(self.unfollow_delay)
+                                                              self.add_time(self.unfollow_delay)
+
             if self.bot_mode == 1:
                 unfollow_protocol(self)
 
@@ -686,20 +690,31 @@ class InstaBot:
     def check_exisiting_comment(self, media_code):
         url_check = self.url_media_detail % (media_code)
         check_comment = self.s.get(url_check)
-        all_data = json.loads(check_comment.text)
-        if all_data['graphql']['shortcode_media']['owner']['id'] == self.user_id:
+
+        if not check_comment.text:
+            self.write_log("Failed to get comment info - not leaving comment")
+            # There was a problem getting comment info, assume comment exists to avoid duplicates
+            return True
+        try:
+            all_data = json.loads(check_comment.text)
+            if all_data['graphql']['shortcode_media']['owner']['id'] == self.user_id:
                 self.write_log("Keep calm - It's your own media ;)")
                 # Del media to don't loop on it
                 del self.media_by_tag[0]
                 return True
-        comment_list = list(all_data['graphql']['shortcode_media']['edge_media_to_comment']['edges'])
-        for d in comment_list:
-            if d['node']['owner']['id'] == self.user_id:
-                self.write_log("Keep calm - Media already commented ;)")
-                # Del media to don't loop on it
-                del self.media_by_tag[0]
-                return True
+
+            comment_list = list(all_data['graphql']['shortcode_media']['edge_media_to_comment']['edges'])
+            for d in comment_list:
+                if d['node']['owner']['id'] == self.user_id:
+                    self.write_log("Keep calm - Media already commented ;)")
+                    del self.media_by_tag[0]
+                    return True
+        except:
+            self.write_log("Exception parsing comments json - not leaving comment")
+            return True
+
         return False
+
 
     def auto_unfollow(self):
         chooser = 1
