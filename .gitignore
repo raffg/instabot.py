@@ -97,3 +97,6 @@ ENV/
 # IDEs
 .idea/
 *.iml
+
+# Follows database
+follows_db.db

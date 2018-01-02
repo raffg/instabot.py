@@ -9,6 +9,7 @@ import logging
 import random
 import signal
 import sys
+import sqlite3
 
 if 'threading' in sys.modules:
     del sys.modules['threading']
@@ -38,6 +39,13 @@ class InstaBot:
 
     https://github.com/LevPasha/instabot.py
     """
+
+    """
+        Faz edits to exlude uname repeats for follows
+        basically creating the db
+    """
+    follows_db = sqlite3.connect("follows_db.db", timeout = 0, isolation_level = None)
+    follows_db_c = follows_db.cursor()
 
     url = 'https://www.instagram.com/'
     url_tag = 'https://www.instagram.com/explore/tags/%s/?__a=1'
@@ -136,6 +144,11 @@ class InstaBot:
                  tag_blacklist=[],
                  unwanted_username_list=[],
                  unfollow_whitelist=[]):
+
+        """
+            faz edit to initialize db if necessary
+        """
+        self.follows_db_c.execute("CREATE TABLE IF NOT EXISTS usernames (username varchar(300) primary key)")
 
         self.bot_start = datetime.datetime.now()
         self.unfollow_break_min = unfollow_break_min
@@ -608,6 +621,17 @@ class InstaBot:
             log_string = "Trying to follow: %s" % (
                 self.media_by_tag[0]["owner"]["id"])
             self.write_log(log_string)
+
+            """
+                Faz edits to check if user has already been followed
+            """
+            try:
+                self.follows_db_c.execute("INSERT INTO usernames (username) VALUES(?)", (self.media_by_tag[0]["owner"]["id"],))
+            except:
+                self.write_log("I tried to follow this guy once: %s" % (self.media_by_tag[0]["owner"]["id"]))
+                self.bot_follow_list.append([self.media_by_tag[0]["owner"]["id"], time.time()])
+                self.next_iteration["Follow"] = time.time() + self.add_time(self.follow_delay)
+                return
 
             if self.follow(self.media_by_tag[0]["owner"]["id"]) != False:
                 self.bot_follow_list.append(
