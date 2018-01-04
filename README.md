@@ -1,3 +1,10 @@
+# Additions in my repo
+
+- Bot creates a database to avoid repeated followings of the same user
+- Bot only unfollows users it has followed itself (will not unfollow a user you have manually added)
+- Comments can use emoji
+- Fixes several errors in the unfollow process
+
 # InstaBot
 
 > Toolkit for building automated Instagram bots without direct access to the Instagram API or passsing through the review process.
