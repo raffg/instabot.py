@@ -12,12 +12,12 @@ import sys
 import sqlite3
 import emoji
 
-if 'threading' in sys.modules:
-    del sys.modules['threading']
+#if 'threading' in sys.modules:
+#    del sys.modules['threading']
 import time
 import requests
-from unfollow_protocol import unfollow_protocol
-from userinfo import UserInfo
+from .unfollow_protocol import unfollow_protocol
+from .userinfo import UserInfo
 
 
 class InstaBot:
