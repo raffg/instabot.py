@@ -12,15 +12,15 @@ from src.unfollow_protocol import unfollow_protocol
 bot = InstaBot(
     login="username",
     password="password",
-    like_per_day=1000,
-    comments_per_day=0,
+    like_per_day=1000*(24/8),
+    comments_per_day=200*(24/8),
     tag_list=['follow4follow', 'f4f', 'cute'],
     tag_blacklist=['rain', 'thunderstorm'],
     user_blacklist={},
-    max_like_for_one_tag=50,
-    follow_per_day=300,
-    follow_time=1 * 60,
-    unfollow_per_day=300,
+    max_like_for_one_tag=10,
+    follow_per_day=600*(24/8),
+    follow_time=1 * 60 * 60,
+    unfollow_per_day=600*(24/8),
     unfollow_break_min=15,
     unfollow_break_max=30,
     log_mod=0,
@@ -28,10 +28,14 @@ bot = InstaBot(
     # List of list of words, each of which will be used to generate comment
     # For example: "This shot feels wow!"
     # Emoji codes: https://github.com/carpedm20/emoji/blob/master/emoji/unicode_codes.py
-    comment_list=[["Nice!", "Good one!", "Great!",",
+    comment_list=[["Nice!", "Good one!", "Great!", "Super nice :)", "Keep it up!",
+            'great shot!',
+            u'\U0001F525'u'\U0001F525'u'\U0001F525', #fire fire fire
             u'\U0001F60E', #sunglasses
             u'\U00002728'u'\U0001F4AB', #sparkles dizzy
             u'\U0001F44D', #thumbs up
+            u'\U0001F44F'u'\U0001F44F'u'\U0001F44F', #clap clap clap
+            u'\U000026A1' #zap
             ]],
     # Use unwanted_username_list to block usernames containing a string
     ## Will do partial matches; i.e. 'mozart' will block 'legend_mozart'
