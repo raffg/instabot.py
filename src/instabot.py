@@ -330,7 +330,6 @@ class InstaBot:
                 sleeptime, self.unfollow_counter, self.follow_counter)
             self.write_log(log_string)
             time.sleep(sleeptime)
-            self.bot_follow_list.remove(f)
 
         # Logout
         if self.login_status:
