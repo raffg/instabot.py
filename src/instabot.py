@@ -95,7 +95,9 @@ class InstaBot:
     self_follower = 0
 
     # Log setting.
+    '''
     logging.basicConfig(filename='errors.log', level=logging.DEBUG)
+    '''
     log_file_path = ''
     log_file = 0
 
@@ -114,6 +116,9 @@ class InstaBot:
 
     # For new_auto_mod
     next_iteration = {"Like": 0, "Follow": 0, "Unfollow": 0, "Comments": 0}
+
+    # Track halted unfollows
+    unfollow_pause = False
 
     def __init__(self,
                  login,
@@ -649,9 +654,9 @@ class InstaBot:
                             user_id, self.unfollow_counter, self.follow_counter)
                         self.write_log(log_string)
                     else:
-                        log_string = "Still no good :( Skipping and pausing for another 5 minutes"
+                        log_string = "Still no good :( Skipping and pausing for 15 minutes"
                         self.write_log(log_string)
-                        time.sleep(300)
+                        time.sleep(900)
                         return False
                 return unfollow
             except:
@@ -753,13 +758,40 @@ class InstaBot:
                             self.unfollow_counter + 1)
                         self.write_log(log_string)
                         unfollow = self.unfollow(f[0])
+                        '''
+                        Testing
+                        '''
+                        if unfollow is False:
+                            log_string = "Unable to unfollow: %s!!!!!" % (
+                                user_id)
+                            self.write_log(log_string)
+                            self.write_log(log_string)
+                            self.write_log(log_string)
+                            self.write_log(log_string)
+                            self.write_log(log_string)
+                            self.write_log(log_string)
+                            self.bot_follow_list.remove(f)
+                            self.next_iteration["Unfollow"] = time.time() + \
+                                                                  self.add_time(self.unfollow_delay)
+                        '''
+                        End Testing
+                        '''
                         if unfollow.status_code == 200:
                             self.bot_follow_list.remove(f)
+                            unfollow_pause = False
                         else:
-                            log_string = "Slow Down - Pausing unfollows for 5 minutes so we don't get banned!"
-                            self.write_log(log_string)
-                            for f in self.bot_follow_list:
-                                f[1] += 300
+                            if not unfollow_pause:
+                                log_string = "Slow Down - Pausing unfollows for 5 minutes so we don't get banned!"
+                                self.write_log(log_string)
+                                for f in self.bot_follow_list:
+                                    f[1] += 300
+                                unfollow_pause = True
+                            else:
+                                log_string = "Still no good :( Skipping and pausing for 15 minutes"
+                                self.write_log(log_string)
+                                for f in self.bot_follow_list:
+                                    f[1] += 900
+                                unfollow_pause = True
                         self.next_iteration["Unfollow"] = time.time() + \
                                                               self.add_time(self.unfollow_delay)
             if self.bot_mode == 1:
