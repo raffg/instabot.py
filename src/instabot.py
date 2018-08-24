@@ -19,6 +19,7 @@ import requests
 from .sql_updates import check_and_update, check_already_liked, check_already_followed
 from .sql_updates import insert_media, insert_username, insert_unfollow_count
 from .sql_updates import get_usernames_first, get_usernames, get_username_random
+import re
 
 class InstaBot:
     """
@@ -275,13 +276,27 @@ class InstaBot:
         })
 
         r = self.s.get(self.url)
-        self.s.headers.update({'X-CSRFToken': r.cookies['csrftoken']})
+        # self.s.headers.update({'X-CSRFToken': r.cookies['csrftoken']})
+		
+		
+        csrf_token = re.search('(?<=\"csrf_token\":\")\w+', r.text).group(0)
+        self.s.headers.update({'X-CSRFToken': csrf_token})
+		
+		
         time.sleep(5 * random.random())
-        login = self.s.post(
-            self.url_login, data=self.login_post, allow_redirects=True)
-        self.s.headers.update({'X-CSRFToken': login.cookies['csrftoken']})
-        self.csrftoken = login.cookies['csrftoken']
+		
+        # login = self.s.post(
+        #     self.url_login, data=self.login_post, allow_redirects=True)
+        # self.s.headers.update({'X-CSRFToken': login.cookies['csrftoken']})
+        # self.csrftoken = login.cookies['csrftoken']
         #ig_vw=1536; ig_pr=1.25; ig_vh=772;  ig_or=landscape-primary;
+		
+		
+        login = self.s.post(self.url_login, data=self.login_post, allow_redirects=True)
+        self.csrftoken = csrf_token
+		
+		
+	
         self.s.cookies['ig_vw'] = '1536'
         self.s.cookies['ig_pr'] = '1.25'
         self.s.cookies['ig_vh'] = '772'
@@ -293,7 +308,16 @@ class InstaBot:
             finder = r.text.find(self.user_login)
             if finder != -1:
                 ui = UserInfo()
-                self.user_id = ui.get_user_id_by_login(self.user_login)
+
+
+
+
+                # self.user_id = ui.get_user_id_by_login(self.user_login)
+                self.user_id = 8447165
+
+
+
+
                 self.login_status = True
                 log_string = '%s login success!' % (self.user_login)
                 self.write_log(log_string)
@@ -654,9 +678,9 @@ class InstaBot:
                             user_id, self.unfollow_counter, self.follow_counter)
                         self.write_log(log_string)
                     else:
-                        log_string = "Still no good :( Skipping and pausing for 15 minutes"
+                        log_string = "Still no good :( Skipping and pausing for 60 minutes"
                         self.write_log(log_string)
-                        time.sleep(900)
+                        time.sleep(3600)
                         return False
                 return unfollow
             except:
@@ -780,6 +804,12 @@ class InstaBot:
                             self.bot_follow_list.remove(f)
                             unfollow_pause = False
                         else:
+                            # if unfollow_pause not in locals():
+                            #     unfollow_pause = False
+                            try:
+                                unfollow_pause
+                            except NameError:
+                                unfollow_pause = False
                             if not unfollow_pause:
                                 log_string = "Slow Down - Pausing unfollows for 5 minutes so we don't get banned!"
                                 self.write_log(log_string)
@@ -787,10 +817,10 @@ class InstaBot:
                                     f[1] += 300
                                 unfollow_pause = True
                             else:
-                                log_string = "Still no good :( Skipping and pausing for 15 minutes"
+                                log_string = "Still no good :( Skipping and pausing for 60 minutes"
                                 self.write_log(log_string)
                                 for f in self.bot_follow_list:
-                                    f[1] += 900
+                                    f[1] += 3600
                                 unfollow_pause = True
                         self.next_iteration["Unfollow"] = time.time() + \
                                                               self.add_time(self.unfollow_delay)
