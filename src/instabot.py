@@ -19,7 +19,6 @@ import requests
 from .sql_updates import check_and_update, check_already_liked, check_already_followed
 from .sql_updates import insert_media, insert_username, insert_unfollow_count
 from .sql_updates import get_usernames_first, get_usernames, get_username_random
-import re
 
 class InstaBot:
     """
@@ -56,7 +55,7 @@ class InstaBot:
     url_user_detail = 'https://www.instagram.com/%s/?__a=1'
     api_user_detail = 'https://i.instagram.com/api/v1/users/%s/info/'
 
-    user_agent = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:57.0) Gecko/20100101 Firefox/57.0")
+    user_agent = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36")
     accept_language = 'en-US,en;q=0.5'
 
     # If instagram ban you - query return 400 error.
@@ -276,14 +275,13 @@ class InstaBot:
         })
 
         r = self.s.get(self.url)
-        csrf_token = re.search('(?<=\"csrf_token\":\")\w+', r.text).group(0)
-        self.s.headers.update({'X-CSRFToken': csrf_token})
+        self.s.headers.update({'X-CSRFToken': r.cookies['csrftoken']})
         time.sleep(5 * random.random())
-        login = self.s.post(self.url_login, data=self.login_post, allow_redirects=True)
-        self.csrftoken = csrf_token
-		
-		
-	
+        login = self.s.post(
+            self.url_login, data=self.login_post, allow_redirects=True)
+        self.s.headers.update({'X-CSRFToken': login.cookies['csrftoken']})
+        self.csrftoken = login.cookies['csrftoken']
+        #ig_vw=1536; ig_pr=1.25; ig_vh=772;  ig_or=landscape-primary;
         self.s.cookies['ig_vw'] = '1536'
         self.s.cookies['ig_pr'] = '1.25'
         self.s.cookies['ig_vh'] = '772'
@@ -791,11 +789,7 @@ class InstaBot:
                             self.bot_follow_list.remove(f)
                             unfollow_pause = False
                         else:
-                            # if unfollow_pause not in locals():
-                            #     unfollow_pause = False
-                            try:
-                                unfollow_pause
-                            except NameError:
+                            if unfollow_pause not in locals():
                                 unfollow_pause = False
                             if not unfollow_pause:
                                 log_string = "Slow Down - Pausing unfollows for 5 minutes so we don't get banned!"
